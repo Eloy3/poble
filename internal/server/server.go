@@ -86,9 +86,20 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 			h.handleNightAction(client, env)
 		case "resolve_night":
 			h.handleResolveNight(client)
+		case "ready":
+			h.handleReady(client)
 		default:
 			h.send(client, Envelope{Type: "error", Text: "unknown message type"})
 		}
+	}
+}
+
+func (h *Hub) handleReady(client *Client) {
+	player := h.game.FindPlayerByID(client.PlayerID)
+	if player != nil && h.game.Phase == game.PhaseLobby {
+		player.Ready = true
+		h.game.Ready++
+		h.broadcastGame(Envelope{Type: "ready", Text: fmt.Sprintf("%s is ready. (%d/%d)", player.Name, h.game.Ready, game.Limit)})
 	}
 }
 
@@ -131,7 +142,7 @@ func (h *Hub) handleChat(client *Client, env Envelope) {
 		return
 	}
 
-	h.broadcastGame(Envelope{Type: "chat", Player: player.Name, Text: msg})
+	h.broadcastGame(Envelope{Type: "chat", Player: player.Name, Text: player.Name + ": " + msg})
 }
 
 func (h *Hub) handleStartGame(client *Client) {

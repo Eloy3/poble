@@ -14,6 +14,8 @@ const (
 	PhaseNight = "night"
 	PhaseDay   = "day"
 	PhaseEnded = "ended"
+
+	Limit = 4
 )
 
 const (
@@ -27,6 +29,7 @@ type Player struct {
 	Name  string
 	Role  Role
 	Alive bool
+	Ready bool
 }
 
 type Role struct {
@@ -39,6 +42,7 @@ type Game struct {
 	ID          string
 	Phase       string
 	DayNumber   int
+	Ready       int
 	Players     []*Player
 	Events      []string
 	NightTarget map[string]string

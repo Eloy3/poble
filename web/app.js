@@ -5,6 +5,8 @@ const chatForm = document.getElementById("chatForm");
 const nameInput = document.getElementById("name");
 const messageInput = document.getElementById("message");
 const sendButton = document.getElementById("send");
+const readyButton = document.getElementById("ready");
+const startGameButton = document.getElementById("startGame");
 
 const protocol = location.protocol === "https:" ? "wss" : "ws";
 const socket = new WebSocket(`${protocol}://${location.host}/ws`);
@@ -48,6 +50,8 @@ joinForm.addEventListener("submit", (event) => {
   joinForm.querySelector("button").disabled = true;
   messageInput.disabled = false;
   sendButton.disabled = false;
+  readyButton.disabled = false;
+  startGameButton.disabled = false;
   messageInput.focus();
 });
 
@@ -63,4 +67,15 @@ chatForm.addEventListener("submit", (event) => {
 
   messageInput.value = "";
   messageInput.focus();
+});
+
+readyButton.addEventListener("click", () => {
+  if (socket.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({ type: "ready" }));
+  readyButton.disabled = true;
+});
+
+startGameButton.addEventListener("click", () => {
+  if (socket.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({ type: "start_game" }));
 });
