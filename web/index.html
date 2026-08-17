@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clocktower Prototype</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main>
+    <div class="card">
+      <h1>Blood on the Clocktower prototype</h1>
+      <p>Status: <strong id="status">Connecting…</strong></p>
+    </div>
+
+    <div class="card">
+      <form id="joinForm">
+        <input id="name" placeholder="Your name" maxlength="30" autocomplete="off">
+        <button type="submit">Join</button>
+      </form>
+
+      <form id="chatForm">
+        <input id="message" placeholder="Send a message" maxlength="200" autocomplete="off" disabled>
+        <button id="send" type="submit" disabled>Send</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div id="log"></div>
+    </div>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #111;
+  color: #eee;
+}
+
+main {
+  max-width: 760px;
+  margin: 48px auto;
+  padding: 0 20px;
+}
+
+.card {
+  background: #1b1b1b;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+#status {
+  color: #8f8;
+}
+
+#log {
+  height: 320px;
+  overflow-y: auto;
+  background: #0b0b0b;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: ui-monospace, monospace;
+}
+
+.line {
+  margin: 0 0 8px;
+}
+
+.system {
+  color: #aaa;
+}
+
+form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+input, button {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #444;
+}
+
+input {
+  flex: 1;
+  background: #101010;
+  color: white;
+}
+
+button {
+  background: #eee;
+  color: #111;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: .5;
+}
