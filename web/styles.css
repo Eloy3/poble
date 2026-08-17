@@ -77,3 +77,9 @@ button:disabled {
   cursor: default;
   opacity: .5;
 }
+
+.game-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
