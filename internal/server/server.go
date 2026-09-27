@@ -96,10 +96,10 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 
 func (h *Hub) handleReady(client *Client) {
 	player := h.game.FindPlayerByID(client.PlayerID)
-	if player != nil && h.game.Phase == game.PhaseLobby {
+	if player != nil && h.game.Phase == game.PhaseLobby && !player.Ready {
 		player.Ready = true
 		h.game.Ready++
-		h.broadcastGame(Envelope{Type: "ready", Text: fmt.Sprintf("%s is ready. (%d/%d)", player.Name, h.game.Ready, game.Limit)})
+		h.broadcastGame(Envelope{Type: "ready", Text: fmt.Sprintf("%s is ready. (%d/%d)", player.Name, h.game.Ready, h.game.PlayerCount())})
 	}
 }
 
@@ -150,7 +150,24 @@ func (h *Hub) handleStartGame(client *Client) {
 		h.send(client, Envelope{Type: "error", Text: err.Error()})
 		return
 	}
-	h.broadcastGame(Envelope{Type: "game_started", State: h.game})
+	h.broadcastGame(Envelope{
+		Type:  "game_started",
+		Text:  h.game.Events[0],
+		State: h.publicState(),
+	})
+
+	h.mu.Lock()
+	clients := make([]*Client, 0, len(h.clients))
+	for connectedClient := range h.clients {
+		clients = append(clients, connectedClient)
+	}
+	h.mu.Unlock()
+	for _, connectedClient := range clients {
+		player := h.game.FindPlayerByID(connectedClient.PlayerID)
+		if player != nil {
+			h.sendRole(connectedClient, player)
+		}
+	}
 }
 
 func (h *Hub) handleNightAction(client *Client, env Envelope) {
@@ -176,7 +193,7 @@ func (h *Hub) handleResolveNight(client *Client) {
 		return
 	}
 	h.game.ResolveNight()
-	h.broadcastGame(Envelope{Type: "state_update", State: h.game})
+	h.broadcastGame(Envelope{Type: "state_update", State: h.publicState()})
 }
 
 func (h *Hub) send(client *Client, msg Envelope) {
@@ -213,19 +230,37 @@ func (h *Hub) sendPlayerView(client *Client, player *game.Player) {
 	}
 	state := map[string]any{
 		"playerName": player.Name,
-		"role":       player.Role.Name,
 		"alive":      player.Alive,
-		"phase":      h.game.Phase,
-		"players": func() []map[string]any {
-			result := make([]map[string]any, 0, len(h.game.Players))
-			for _, p := range h.game.Players {
-				result = append(result, map[string]any{"name": p.Name, "alive": p.Alive, "role": p.Role.Name})
-			}
-			return result
-		}(),
-		"eventLog": h.game.Events,
+	}
+	for key, value := range h.publicState() {
+		state[key] = value
 	}
 	h.send(client, Envelope{Type: "state", State: state})
+}
+
+func (h *Hub) sendRole(client *Client, player *game.Player) {
+	h.send(client, Envelope{
+		Type: "private_role",
+		Text: fmt.Sprintf("Your role is %s.", strings.ToUpper(player.Role.Name)),
+		State: map[string]string{
+			"role":    player.Role.Name,
+			"team":    player.Role.Team,
+			"ability": player.Role.Ability.Description,
+		},
+	})
+}
+
+func (h *Hub) publicState() map[string]any {
+	players := make([]map[string]any, 0, len(h.game.Players))
+	for _, player := range h.game.Players {
+		players = append(players, map[string]any{"name": player.Name, "alive": player.Alive})
+	}
+	return map[string]any{
+		"phase":     h.game.Phase,
+		"dayNumber": h.game.DayNumber,
+		"players":   players,
+		"eventLog":  h.game.Events,
+	}
 }
 
 func (h *Hub) removeClient(client *Client) {
