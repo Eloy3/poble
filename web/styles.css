@@ -48,6 +48,10 @@ h1 {
   color: #aaa;
 }
 
+.role {
+  color: #ffd166;
+}
+
 form {
   display: flex;
   gap: 8px;

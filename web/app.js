@@ -33,7 +33,20 @@ socket.addEventListener("close", () => {
 
 socket.addEventListener("message", (event) => {
   const msg = JSON.parse(event.data);
-  addLine(msg.text, msg.type === "system" ? "system" : "");
+  if (msg.type === "game_started") {
+    readyButton.disabled = true;
+    startGameButton.disabled = true;
+  }
+
+  if (msg.type === "private_role") {
+    const role = msg.state;
+    addLine(`${msg.text} Team: ${role.team}. Ability: ${role.ability}.`, "role");
+    return;
+  }
+
+  if (msg.text) {
+    addLine(msg.text, msg.type === "system" ? "system" : "");
+  }
 });
 
 joinForm.addEventListener("submit", (event) => {
