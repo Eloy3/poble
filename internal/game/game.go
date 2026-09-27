@@ -15,14 +15,46 @@ const (
 	PhaseDay   = "day"
 	PhaseEnded = "ended"
 
-	Limit = 4
+	Limit = 3
 )
 
 const (
-	RoleVillager = "villager"
-	RoleDemon    = "demon"
-	RoleMonk     = "monk"
+	Villager      = "villager"
+	Demon         = "demon"
+	Monk          = "monk"
+	Chef          = "chef"
+	FortuneTeller = "fortune teller"
+	Imp           = "imp"
+	ScarletWoman  = "scarlet woman"
+	Undertaker    = "undertaker"
+	Dreamer       = "dreamer"
 )
+
+var roleDefinitions = map[string]Role{
+	Demon: {
+		Name: Demon,
+		Team: "evil",
+		Ability: Ability{
+			Name:        "kill",
+			Description: "kill another player at night",
+		},
+	},
+	Monk: {
+		Name:    Monk,
+		Team:    "poble",
+		Ability: Ability{Description: "protect a player at night"},
+	},
+	Villager: {
+		Name:    Villager,
+		Team:    "poble",
+		Ability: Ability{Description: "none"},
+	},
+	FortuneTeller: {
+		Name:    FortuneTeller,
+		Team:    "poble",
+		Ability: Ability{Description: "Each night, choose 2 players: you learn if either is a Demon. There is a good player that registers as a Demon to you."},
+	},
+}
 
 type Player struct {
 	ID    string
@@ -35,7 +67,13 @@ type Player struct {
 type Role struct {
 	Name    string
 	Team    string
-	Ability string
+	Ability Ability
+	IsDemon bool
+}
+
+type Ability struct {
+	Name        string
+	Description string
 }
 
 type Game struct {
@@ -100,8 +138,11 @@ func (g *Game) AddPlayer(name string) (*Player, error) {
 }
 
 func (g *Game) StartGame() error {
-	if len(g.Players) < 3 {
-		return errors.New("at least 3 players are required to start")
+	if len(g.Players) < Limit {
+		return fmt.Errorf("at least %d players are required to start", Limit)
+	}
+	if g.Ready < len(g.Players) {
+		return errors.New("all players must be ready to start")
 	}
 	if g.Phase != PhaseLobby {
 		return errors.New("game already started")
@@ -116,20 +157,14 @@ func (g *Game) StartGame() error {
 		players[i].Alive = true
 	}
 
-	assignments := map[string]Role{
-		RoleDemon:    {Name: RoleDemon, Team: "evil", Ability: "kill another player at night"},
-		RoleMonk:     {Name: RoleMonk, Team: "good", Ability: "protect a player at night"},
-		RoleVillager: {Name: RoleVillager, Team: "good", Ability: "none"},
-	}
-
 	for i, player := range players {
 		switch {
 		case i == 0:
-			player.Role = assignments[RoleDemon]
+			player.Role = roleDefinitions[Demon]
 		case i == 1:
-			player.Role = assignments[RoleMonk]
+			player.Role = roleDefinitions[Monk]
 		default:
-			player.Role = assignments[RoleVillager]
+			player.Role = roleDefinitions[Villager]
 		}
 	}
 
@@ -138,7 +173,7 @@ func (g *Game) StartGame() error {
 	g.DayNumber = 1
 	g.NightTarget = make(map[string]string)
 	g.StartedAt = time.Now()
-	g.Events = []string{"The game begins. Night has fallen."}
+	g.Events = []string{"A long time ago in the sleepy town of Ravenswood Bluff, during a hellish thunderstorm, on the stroke of midnight... you hear a scream. Rushing to the Town Square to investigate, you find your beloved Storyteller, myself, has been murdered... impaled on the hour hand of the clocktower, blood dripping onto the cobblestones below. You assume that this is the work of a Demon, and you are correct— a Demon that kills by night and takes on human form by day."}
 	return nil
 }
 
@@ -163,13 +198,13 @@ func (g *Game) ResolveNightAction(playerID, targetName string) error {
 		return errors.New("target is not a valid alive player")
 	}
 
-	if actor.Role.Name == RoleDemon {
+	if actor.Role.Name == Demon {
 		g.NightTarget[playerID] = target.ID
 		g.Events = append(g.Events, fmt.Sprintf("%s targeted %s at night.", actor.Name, target.Name))
 		return nil
 	}
 
-	if actor.Role.Name == RoleMonk {
+	if actor.Role.Name == Monk {
 		g.NightTarget[playerID] = target.ID
 		g.Events = append(g.Events, fmt.Sprintf("%s protected %s at night.", actor.Name, target.Name))
 		return nil
@@ -190,10 +225,10 @@ func (g *Game) ResolveNight() {
 		if actor == nil || !actor.Alive {
 			continue
 		}
-		if actor.Role.Name == RoleDemon {
+		if actor.Role.Name == Demon {
 			killer = targetID
 		}
-		if actor.Role.Name == RoleMonk {
+		if actor.Role.Name == Monk {
 			protected = targetID
 		}
 	}
