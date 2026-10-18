@@ -15,12 +15,13 @@ const (
 	PhaseDay   = "day"
 	PhaseEnded = "ended"
 
-	Limit = 3
+	Limit = 3 //should be 6, kept lower for easier testing
 )
 
 const (
-	Villager      = "villager"
 	Demon         = "demon"
+	Minion        = "minion"
+	Outsider      = "outsider"
 	Monk          = "monk"
 	Chef          = "chef"
 	FortuneTeller = "fortune teller"
@@ -28,31 +29,62 @@ const (
 	ScarletWoman  = "scarlet woman"
 	Undertaker    = "undertaker"
 	Dreamer       = "dreamer"
+	Baron         = "baron"
+	Assassin      = "assassin"
+	Butler        = "butler"
 )
 
-var roleDefinitions = map[string]Role{
-	Demon: {
-		Name: Demon,
-		Team: "evil",
-		Ability: Ability{
-			Name:        "kill",
-			Description: "kill another player at night",
-		},
-	},
+var goodRoles = map[string]Role{
 	Monk: {
 		Name:    Monk,
-		Team:    "poble",
-		Ability: Ability{Description: "protect a player at night"},
-	},
-	Villager: {
-		Name:    Villager,
-		Team:    "poble",
-		Ability: Ability{Description: "none"},
+		Type:    "poble",
+		Ability: "protect a player at night",
 	},
 	FortuneTeller: {
 		Name:    FortuneTeller,
-		Team:    "poble",
-		Ability: Ability{Description: "Each night, choose 2 players: you learn if either is a Demon. There is a good player that registers as a Demon to you."},
+		Type:    "poble",
+		Ability: "Each night, choose 2 players: you learn if either is a Demon. There is a good player that registers as a Demon to you.",
+	},
+	Undertaker: {
+		Name:    Undertaker,
+		Type:    "poble",
+		Ability: "Each night*, you learn which character died by execution today.",
+	},
+	Dreamer: {
+		Name:    Dreamer,
+		Type:    "poble",
+		Ability: "Each night, choose a player (not yourself or Travellers): you learn 1 good & 1 evil character, 1 of which is correct.",
+	},
+}
+var outsiderRoles = map[string]Role{
+	Butler: {
+		Name:    Butler,
+		Type:    "poble",
+		Ability: "Each night, choose a player (not yourself): tomorrow, you may only vote if they are voting too.",
+	},
+}
+var demonRoles = map[string]Role{
+	Imp: {
+		Name:    Imp,
+		Type:    "demon",
+		Ability: "kill another player at night",
+	},
+}
+var minionRoles = map[string]Role{
+	Baron: {
+		Name:    Baron,
+		Type:    "minion",
+		Ability: "There are extra Outsiders in play. [+2 Outsiders]",
+	},
+	ScarletWoman: {
+		Name:    ScarletWoman,
+		Type:    "minion",
+		Ability: "If there are 5 or more players alive & the Demon dies, you become the Demon. (Travellers don't count.)",
+	},
+	Assassin: {
+		Name:    Assassin,
+		Type:    "minion",
+		Ability: "Once per game, at night*, choose a player: they die, even if for some reason they could not.",
 	},
 }
 
@@ -66,14 +98,9 @@ type Player struct {
 
 type Role struct {
 	Name    string
-	Team    string
-	Ability Ability
+	Type    string
+	Ability string
 	IsDemon bool
-}
-
-type Ability struct {
-	Name        string
-	Description string
 }
 
 type Game struct {
@@ -157,15 +184,25 @@ func (g *Game) StartGame() error {
 		players[i].Alive = true
 	}
 
-	for i, player := range players {
-		switch {
-		case i == 0:
-			player.Role = roleDefinitions[Demon]
-		case i == 1:
-			player.Role = roleDefinitions[Monk]
-		default:
-			player.Role = roleDefinitions[Villager]
-		}
+	players[0].Role = demonRoles[Imp]
+
+	var goodRoleNames []string
+
+	for name := range goodRoles {
+		goodRoleNames = append(goodRoleNames, name)
+	}
+
+	for i := 0; i < g.PlayerCount(); i++ {
+		roleName := goodRoleNames[i]
+		players[i+1].Role = goodRoles[roleName]
+	}
+
+	if g.PlayerCount() > 5 {
+		players[g.PlayerCount()].Role = minionRoles[ScarletWoman]
+	}
+
+	if g.PlayerCount() > 8 {
+		players[g.PlayerCount()-1].Role = minionRoles[Baron]
 	}
 
 	g.Players = players

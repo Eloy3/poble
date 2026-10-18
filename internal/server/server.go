@@ -244,8 +244,8 @@ func (h *Hub) sendRole(client *Client, player *game.Player) {
 		Text: fmt.Sprintf("Your role is %s.", strings.ToUpper(player.Role.Name)),
 		State: map[string]string{
 			"role":    player.Role.Name,
-			"team":    player.Role.Team,
-			"ability": player.Role.Ability.Description,
+			"team":    player.Role.Type,
+			"ability": player.Role.Ability,
 		},
 	})
 }
